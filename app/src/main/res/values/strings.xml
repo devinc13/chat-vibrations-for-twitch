@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Chat Vibrations For Twitch</string>
+    <string name="start">Start!</string>
+    <string name="disconnect">Disconnect</string>
 </resources>

@@ -24,6 +24,24 @@ public class ChatActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
+        Bundle extras = getIntent().getExtras();
+        if (extras == null) {
+            // TODO: Error message
+        }
+
+        String accessToken = extras.getString(Constants.ACCESSTOKEN);
+        if (accessToken == null) {
+            // TODO: Error message
+        }
+
+        String username = extras.getString(Constants.USERNAME);
+        if (username == null) {
+            // TODO: Error message
+        }
+
+        int num_vibrations = extras.getInt(Constants.NUM_VIBRATIONS, 1);
+        int min_time_between = extras.getInt(Constants.MIN_TIME, 1);
+
         final Button button = (Button) findViewById(R.id.disconnect_button);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -31,34 +49,40 @@ public class ChatActivity extends AppCompatActivity {
             }
         });
 
-        new StartBotTask(this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, null);
+        new StartBotTask(this, accessToken, username, num_vibrations, min_time_between).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, null);
     }
 
     class StartBotTask extends AsyncTask<String, Void, Void> {
         private Context mContext;
+        private String accessToken;
+        private String username;
+        private int num_vibrations;
+        private int min_time_between;
 
-        public StartBotTask(Context context){
+        public StartBotTask(Context context, String accessToken, String username, int num_vibrations, int min_time_between){
             mContext = context;
+            this.accessToken = accessToken;
+            this.username = username;
+            this.num_vibrations = num_vibrations;
+            this.min_time_between = min_time_between;
         }
 
         protected Void doInBackground(String... strings) {
-            // TODO: pass these through intent
-            String twitch_username = "";
-            String oauth_password = "";
-            String twitch_channel = ""; // Note: This needs a # in front of it
+            String twitch_username = username;
+            String oauth_password = "oauth:" + accessToken;
+            String twitch_channel = "#" + username;
 
             Configuration configuration = new Configuration.Builder()
-                    .setAutoNickChange(false) //Twitch doesn't support multiple users
-                    .setOnJoinWhoEnabled(false) //Twitch doesn't support WHO command
+                    .setAutoNickChange(false)
+                    .setOnJoinWhoEnabled(false)
                     .setCapEnabled(true)
-                    .addCapHandler(new EnableCapHandler("twitch.tv/membership")) //Twitch by default doesn't send JOIN, PART, and NAMES unless you request it, see https://github.com/justintv/Twitch-API/blob/master/IRC.md#membership
+                    .addCapHandler(new EnableCapHandler("twitch.tv/membership"))
                     .addServer("irc.twitch.tv")
-                    .setName(twitch_username) //Your twitch.tv username
-                    .setServerPassword(oauth_password) //Your oauth password from http://twitchapps.com/tmi
-                    .addAutoJoinChannel(twitch_channel) //Some twitch channel
-                    .addListener(new MyListenerAdapter(mContext)).buildConfiguration();
+                    .setName(twitch_username)
+                    .setServerPassword(oauth_password)
+                    .addAutoJoinChannel(twitch_channel)
+                    .addListener(new MyListenerAdapter(mContext, num_vibrations, min_time_between)).buildConfiguration();
 
-            //Create our bot with the configuration
             bot = new PircBotX(configuration);
 
             try {
@@ -83,15 +107,12 @@ public class ChatActivity extends AppCompatActivity {
         }
 
         protected Void doInBackground(String... strings) {
-            if(android.os.Debug.isDebuggerConnected())
-                android.os.Debug.waitForDebugger();
             bot.sendIRC().quitServer();
             return null;
         }
 
         protected void onPostExecute(Void param) {
             // Go back to the main activity
-            Log.d(TAG, "GOING BACK");
             Intent intent = new Intent(mContext, MainActivity.class);
             startActivity(intent);
         }

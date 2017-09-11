@@ -2,6 +2,7 @@ package com.dldc.chatvibrationsfortwitch;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -31,6 +32,17 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Check if we have an access token already saved
+        SharedPreferences preferences = getApplicationContext().getSharedPreferences(Constants.PREFERENCES, 0);
+        String accessToken = preferences.getString(Constants.CURRENT_ACCESS_TOKEN, null);
+
+        if (accessToken != null) {
+            // Jump straight to settings
+            Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+            startActivity(intent);
+        }
+
         setContentView(R.layout.activity_main);
 
         final Button button = (Button) findViewById(R.id.authorize_button);
@@ -49,7 +61,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         protected String doInBackground(String... strings) {
-            SharedPreferencesCredentialStore credentialStore = new SharedPreferencesCredentialStore(mContext, Constants.PREFERENCES, new JacksonFactory());
             AuthorizationFlow.Builder builder = new AuthorizationFlow.Builder(
                     BearerToken.authorizationHeaderAccessMethod(),
                     AndroidHttp.newCompatibleTransport(),
@@ -58,7 +69,6 @@ public class MainActivity extends AppCompatActivity {
                     new ClientParametersAuthentication(Constants.CLIENT_ID, null),
                     Constants.CLIENT_ID,
                     "https://api.twitch.tv/kraken/oauth2/authorize");
-            builder.setCredentialStore(credentialStore);
             Set scopes = new HashSet();
             scopes.add("chat_login");
             scopes.add("user_read");
@@ -91,9 +101,9 @@ public class MainActivity extends AppCompatActivity {
 
             String accessToken = null;
             try {
-                // TODO: Is userId my user id or client id?
-                accessToken = oauth.authorizeImplicitly("devinc13", null, null).getResult().getAccessToken();
+                accessToken = oauth.authorizeImplicitly("", null, null).getResult().getAccessToken();
             } catch (IOException e) {
+                // TODO ERROR
                 Log.e(TAG, e.getMessage());
             }
 
@@ -101,8 +111,12 @@ public class MainActivity extends AppCompatActivity {
         }
 
         protected void onPostExecute(String accessToken) {
+            // Save access token in shared preferences
+            SharedPreferences preferences = getApplicationContext().getSharedPreferences(Constants.PREFERENCES, 0);
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putString(Constants.CURRENT_ACCESS_TOKEN, accessToken).commit();
+
             Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
-            intent.putExtra(Constants.ACCESSTOKEN, accessToken);
             startActivity(intent);
         }
     }

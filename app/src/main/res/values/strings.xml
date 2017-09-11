@@ -2,11 +2,14 @@
     <string name="app_name">Chat Vibrations For Twitch</string>
     <string name="start_button">Start!</string>
     <string name="authorize">Click here to authorize the\nconnection to your Twitch chat!</string>
-    <string name="vibration_settings">Select vibration pattern:</string>
+    <string name="vibration_settings">Select alert vibration pattern:</string>
     <string name="disconnect">Disconnect</string>
     <string name="single_vibration">Single vibration</string>
     <string name="double_vibration">Double vibration</string>
     <string name="triple_vibration">Triple vibration</string>
-    <string name="min_time_between_vibrations">Minimum delay between vibrations (seconds):</string>
+    <string name="min_time_between_vibrations">Minimum delay between alerts (seconds):</string>
+    <string name="username_placeholder">Connecting to... </string>
+    <string name="username_parameterized">Connecting to %1$s\'s chat</string>
+    <string name="change_user">Change Users</string>
     <string name="chat_page_text">App will now vibrate whenever a message is written in chat (unless messages are faster than the specified minimum delay)</string>
 </resources>

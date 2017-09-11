@@ -3,6 +3,7 @@ package com.dldc.chatvibrationsfortwitch;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
@@ -13,6 +14,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.TextView;
+
+import org.w3c.dom.Text;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -35,41 +39,46 @@ public class SettingsActivity extends AppCompatActivity {
 
         vibrator = (Vibrator) this.getSystemService(Context.VIBRATOR_SERVICE);
 
-        Bundle extras = getIntent().getExtras();
-        if (extras == null) {
-            // TODO: Error message
-        }
-
-        accessToken = extras.getString(Constants.ACCESSTOKEN);
+        SharedPreferences preferences = getApplicationContext().getSharedPreferences(Constants.PREFERENCES, 0);
+        accessToken = preferences.getString(Constants.CURRENT_ACCESS_TOKEN, null);
         if (accessToken == null) {
-            // TODO: Error message
+            // TODO ERROR
         }
 
         new GetUserTask(accessToken).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, null);
 
-        if (username == null) {
-            // TODO: Error message
-        }
+        Button changeUsersButton = (Button) findViewById(R.id.change_user);
+        changeUsersButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                SharedPreferences preferences = getApplicationContext().getSharedPreferences(Constants.PREFERENCES, 0);
+                SharedPreferences.Editor editor = preferences.edit();
+                editor.remove(Constants.CURRENT_ACCESS_TOKEN).commit();
 
-        RadioButton single_vibration_radio = (RadioButton) findViewById(R.id.single_vibration);
-        RadioButton double_vibration_radio = (RadioButton) findViewById(R.id.double_vibration);
-        RadioButton triple_vibration_radio = (RadioButton) findViewById(R.id.triple_vibration);
+                Intent intent = new Intent(SettingsActivity.this, MainActivity.class);
+                startActivity(intent);
+            }
+        });
 
-        single_vibration_radio.setOnClickListener(new View.OnClickListener() {
+        RadioButton singleVibrationRadio = (RadioButton) findViewById(R.id.single_vibration);
+        RadioButton doubleVibrationRadio = (RadioButton) findViewById(R.id.double_vibration);
+        RadioButton tripleVibrationRadio = (RadioButton) findViewById(R.id.triple_vibration);
+
+        singleVibrationRadio.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 vibrator.vibrate(Constants.one_length);
             }
         });
 
-        double_vibration_radio.setOnClickListener(new View.OnClickListener() {
+        doubleVibrationRadio.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 vibrator.vibrate(Constants.two_pattern, -1);
             }
         });
 
-        triple_vibration_radio.setOnClickListener(new View.OnClickListener() {
+        tripleVibrationRadio.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 vibrator.vibrate(Constants.three_pattern, -1);
@@ -96,7 +105,6 @@ public class SettingsActivity extends AppCompatActivity {
                 }
 
                 Intent intent = new Intent(SettingsActivity.this, ChatActivity.class);
-                intent.putExtra(Constants.ACCESSTOKEN, accessToken);
                 intent.putExtra(Constants.MIN_TIME, min_time);
                 intent.putExtra(Constants.NUM_VIBRATIONS, num_vibrations);
                 intent.putExtra(Constants.USERNAME, username);
@@ -146,7 +154,6 @@ public class SettingsActivity extends AppCompatActivity {
                 }
             }
 
-            Log.d(TAG, response);
             // We only need the username, grab it with a regex
             Pattern pattern = Pattern.compile(".*\"name\":\"(.*?)\".*");
             Matcher matcher = pattern.matcher(response);
@@ -161,6 +168,14 @@ public class SettingsActivity extends AppCompatActivity {
 
         protected void onPostExecute(Void result) {
             dialog.dismiss();
+
+            if (username == null) {
+                // TODO: Error message
+            }
+
+            TextView usernameTextView = (TextView) findViewById(R.id.username);
+            usernameTextView.setText(String.format(getString(R.string.username_parameterized), username));
+
             return;
         }
     }

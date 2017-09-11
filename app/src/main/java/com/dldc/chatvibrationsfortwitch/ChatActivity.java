@@ -2,6 +2,7 @@ package com.dldc.chatvibrationsfortwitch;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -29,7 +30,8 @@ public class ChatActivity extends AppCompatActivity {
             // TODO: Error message
         }
 
-        String accessToken = extras.getString(Constants.ACCESSTOKEN);
+        SharedPreferences preferences = getApplicationContext().getSharedPreferences(Constants.PREFERENCES, 0);
+        String accessToken = preferences.getString(Constants.CURRENT_ACCESS_TOKEN, null);
         if (accessToken == null) {
             // TODO: Error message
         }
@@ -113,7 +115,7 @@ public class ChatActivity extends AppCompatActivity {
 
         protected void onPostExecute(Void param) {
             // Go back to the main activity
-            Intent intent = new Intent(mContext, MainActivity.class);
+            Intent intent = new Intent(mContext, SettingsActivity.class);
             startActivity(intent);
         }
     }

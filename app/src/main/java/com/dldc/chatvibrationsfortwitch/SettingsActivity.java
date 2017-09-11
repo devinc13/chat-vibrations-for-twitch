@@ -1,19 +1,32 @@
 package com.dldc.chatvibrationsfortwitch;
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class SettingsActivity extends AppCompatActivity {
     private String accessToken;
     private Vibrator vibrator;
+    private ProgressDialog dialog;
+    private static final String TAG = "SettingsActivity";
+    private String username;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,6 +42,12 @@ public class SettingsActivity extends AppCompatActivity {
 
         accessToken = extras.getString(Constants.ACCESSTOKEN);
         if (accessToken == null) {
+            // TODO: Error message
+        }
+
+        new GetUserTask(accessToken).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, null);
+
+        if (username == null) {
             // TODO: Error message
         }
 
@@ -80,11 +99,69 @@ public class SettingsActivity extends AppCompatActivity {
                 intent.putExtra(Constants.ACCESSTOKEN, accessToken);
                 intent.putExtra(Constants.MIN_TIME, min_time);
                 intent.putExtra(Constants.NUM_VIBRATIONS, num_vibrations);
-
-                // TODO: Replace username with result from api call
-                intent.putExtra(Constants.USERNAME, "devinc13");
+                intent.putExtra(Constants.USERNAME, username);
                 startActivity(intent);
             }
         });
+    }
+
+    class GetUserTask extends AsyncTask<String, Void, Void> {
+        private String accessToken;
+
+        public GetUserTask(String accessToken){
+            this.accessToken = accessToken;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            dialog = ProgressDialog.show(SettingsActivity.this, null, "Retrieving User Information...");
+            super.onPreExecute();
+        }
+
+        protected Void doInBackground(String... strings) {
+            HttpURLConnection urlConnection = null;
+            String response = "";
+            try {
+                URL url = new URL(Constants.TWITCH_GET_USER_URL);
+                urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setRequestProperty ("Client-ID", Constants.CLIENT_ID);
+                urlConnection.setRequestProperty ("Authorization", "OAuth " + accessToken);
+                urlConnection.setRequestMethod("GET");
+                InputStream inputStream = urlConnection.getInputStream();
+                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                int data = inputStreamReader.read();
+
+                while (data != -1) {
+                    char current = (char) data;
+                    data = inputStreamReader.read();
+                    response += current;
+                }
+
+            } catch (Exception e) {
+                //TODO back to start?
+
+            } finally {
+                if (urlConnection != null) {
+                    urlConnection.disconnect();
+                }
+            }
+
+            Log.d(TAG, response);
+            // We only need the username, grab it with a regex
+            Pattern pattern = Pattern.compile(".*\"name\":\"(.*?)\".*");
+            Matcher matcher = pattern.matcher(response);
+            if (matcher.matches()) {
+                username = matcher.group(1);
+            } else {
+                // TODO error
+            }
+
+            return null;
+        }
+
+        protected void onPostExecute(Void result) {
+            dialog.dismiss();
+            return;
+        }
     }
 }

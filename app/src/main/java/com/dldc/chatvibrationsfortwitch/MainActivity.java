@@ -49,25 +49,21 @@ public class MainActivity extends AppCompatActivity {
         }
 
         protected String doInBackground(String... strings) {
-            SharedPreferencesCredentialStore credentialStore = new SharedPreferencesCredentialStore(mContext, "chatVibrationsForTwitchPreferences", new JacksonFactory());
-
+            SharedPreferencesCredentialStore credentialStore = new SharedPreferencesCredentialStore(mContext, Constants.PREFERENCES, new JacksonFactory());
             AuthorizationFlow.Builder builder = new AuthorizationFlow.Builder(
                     BearerToken.authorizationHeaderAccessMethod(),
                     AndroidHttp.newCompatibleTransport(),
                     new JacksonFactory(),
                     new GenericUrl("https://api.twitch.tv/kraken/oauth2/authorize"),
-                    new ClientParametersAuthentication("m4niy6t4288f42ori1b439nhmrfps0", null),
-                    "m4niy6t4288f42ori1b439nhmrfps0",
+                    new ClientParametersAuthentication(Constants.CLIENT_ID, null),
+                    Constants.CLIENT_ID,
                     "https://api.twitch.tv/kraken/oauth2/authorize");
-            // TODO: Do we want to store the credentials? Or just authorize each time?
-            //builder.setCredentialStore(credentialStore);
+            builder.setCredentialStore(credentialStore);
             Set scopes = new HashSet();
             scopes.add("chat_login");
             scopes.add("user_read");
             builder.setScopes(scopes);
             AuthorizationFlow flow = builder.build();
-
-            // TODO: Add force_verify?
 
             AuthorizationUIController controller = new DialogFragmentController(getFragmentManager()) {
                 @Override
